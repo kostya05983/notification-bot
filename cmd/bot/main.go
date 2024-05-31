@@ -7,37 +7,31 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func main() {
-	bot, err := tgbotapi.NewBotAPI("MyAwesomeBotToken")
+type Response struct {
+	Msg    string `json:"text"`
+	ChatID int64  `json:"chat_id"`
+	Method string `json:"method"`
+}
+
+func Handler(rw http.ResponseWriter, req *http.Request) {
+	bot, err := tgbotapi.NewBotAPI("BOT_TOKEN")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	bot.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	wh, _ := tgbotapi.NewWebhookWithCert("https://www.example.com:8443/"+bot.Token, "cert.pem")
-
-	_, err = bot.Request(wh)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	info, err := bot.GetWebhookInfo()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if info.LastErrorDate != 0 {
-		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
-	}
-
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServeTLS("0.0.0.0:8443", "cert.pem", "key.pem", nil)
+	updates := bot.ListenForWebhookRespReqFormat(rw, req)
 
 	for update := range updates {
-		update.Message.Text
-		log.Printf("%+v\n", update)
+		if update.Message.IsCommand() {
+			switch update.Message.Command() {
+			case "start":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет!")
+				msg.ReplyToMessageID = update.Message.MessageID
+
+				bot.Send(msg)
+			}
+		}
 	}
 }
