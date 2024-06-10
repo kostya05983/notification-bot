@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -14,7 +15,7 @@ type Response struct {
 }
 
 func Handler(rw http.ResponseWriter, req *http.Request) {
-	bot, err := tgbotapi.NewBotAPI("BOT_TOKEN")
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
 	}
