@@ -1,9 +1,9 @@
 package entity
 
 type Session struct {
-	chatId      int64
-	state       State
-	googleToken *string
+	ChatId      int64
+	State       State
+	GoogleToken *string
 }
 
 type State string
