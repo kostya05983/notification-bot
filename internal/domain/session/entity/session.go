@@ -6,8 +6,8 @@ type Session struct {
 	GoogleToken *string
 }
 
-type State string
+type State int64
 
-var Created State
-var WaitToken State
-var ChooseCalendar State
+var Created State = 1
+var WaitToken State = 2
+var ChooseCalendar State = 3
