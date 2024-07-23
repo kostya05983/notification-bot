@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"notification-bot/internal/domain/session/entity"
 
 	"github.com/ydb-platform/ydb-go-sdk/v3/table"
@@ -41,8 +42,8 @@ func (r *Repository) get(ctx context.Context, chatId int64) (*entity.Session, er
 			for res.NextResultSet(ctx) {
 				for res.NextRow() {
 					err = res.ScanNamed(
-						named.Required("state", &state),
-						named.Optional("google_token", &googleToken),
+						named.Required(stateField, &state),
+						named.Optional(googleTokenField, &googleToken),
 					)
 					if err != nil {
 						return err
