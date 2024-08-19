@@ -5,7 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"notification-bot/internal/di"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.uber.org/dig"
 )
 
 type Response struct {
@@ -15,6 +18,14 @@ type Response struct {
 }
 
 func Handler(rw http.ResponseWriter, req *http.Request) {
+	container := dig.New()
+	err := di.InitDi(container)
+
+	if err != nil {
+		//todo error
+		return
+	}
+
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
@@ -22,17 +33,23 @@ func Handler(rw http.ResponseWriter, req *http.Request) {
 
 	bot.Debug = true
 
-	updates := bot.ListenForWebhookRespReqFormat(rw, req)
+	container.Invoke(func() {
+		updates := bot.ListenForWebhookRespReqFormat(rw, req)
 
-	for update := range updates {
-		if update.Message.IsCommand() {
-			switch update.Message.Command() {
-			case "start":
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет!")
-				msg.ReplyToMessageID = update.Message.MessageID
+		for update := range updates {
+			if update.Message.IsCommand() {
+				switch update.Message.Command() {
+				case "start":
+					container.Invoke()
 
-				bot.Send(msg)
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет!")
+
+					msg.ReplyToMessageID = update.Message.MessageID
+
+					bot.Send(msg)
+				}
 			}
 		}
-	}
+	})
+
 }

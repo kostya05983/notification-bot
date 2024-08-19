@@ -7,7 +7,7 @@ import (
 	"go.uber.org/dig"
 )
 
-func initDi(di dig.Container) error {
+func InitDi(di *dig.Container) error {
 	err := baseErrors.Join(
 		initInfrastructure(di),
 	)
