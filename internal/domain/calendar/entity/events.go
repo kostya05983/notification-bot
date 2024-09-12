@@ -5,8 +5,8 @@ import (
 )
 
 type Events struct {
-	items    []Event
-	timeZone string
+	Items    []Event
+	TimeZone string
 }
 
 type EventStatus string
@@ -20,6 +20,6 @@ type Event struct {
 	Summary           string
 	Description       string
 	Status            EventStatus
-	start             time.Time
-	originalStartTime time.Time
+	Start             time.Time
+	OriginalStartTime time.Time
 }
