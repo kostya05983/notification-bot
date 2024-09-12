@@ -11,7 +11,7 @@ import (
 	"github.com/ydb-platform/ydb-go-sdk/v3/table/types"
 )
 
-func (r *Repository) get(ctx context.Context, chatId int64) (*entity.Session, error) {
+func (r *Repository) Get(ctx context.Context, chatId int64) (*entity.Session, error) {
 	readTx := table.TxControl(
 		table.BeginTx(
 			table.WithOnlineReadOnly(),

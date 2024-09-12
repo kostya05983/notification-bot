@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"notification-bot/internal/di"
+	calendar "notification-bot/internal/domain/calendar/service"
+	session "notification-bot/internal/domain/session"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/dig"
@@ -22,7 +24,7 @@ func Handler(rw http.ResponseWriter, req *http.Request) {
 	err := di.InitDi(container)
 
 	if err != nil {
-		//todo error
+		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -33,7 +35,7 @@ func Handler(rw http.ResponseWriter, req *http.Request) {
 
 	bot.Debug = true
 
-	container.Invoke(func() {
+	container.Invoke(func(calendar calendar.CalendarService, sessions session.Repository) {
 		updates := bot.ListenForWebhookRespReqFormat(rw, req)
 
 		for update := range updates {
@@ -42,7 +44,7 @@ func Handler(rw http.ResponseWriter, req *http.Request) {
 				case "start":
 					container.Invoke()
 
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет!")
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Для начала работы с ботом нотификаций календаря, нужно авторизоваться в google календаре")
 
 					msg.ReplyToMessageID = update.Message.MessageID
 

@@ -33,7 +33,7 @@ func New(calendar calendar.Service) CalendarService {
 	return CalendarService{calendar}
 }
 
-func (c *CalendarService) getEvents(ctx context.Context) (*entity.Events, error) {
+func (c *CalendarService) getEvents() (*entity.Events, error) {
 	t := time.Now().Format(time.RFC3339)
 
 	events, err := c.api.Events.List("primary").ShowDeleted(false).

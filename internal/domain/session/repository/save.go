@@ -11,7 +11,7 @@ import (
 
 const saveQuery = `UPSERT INTO sessions(chat_id, state, google_token) VALUES($chat_id, $state, $google_token)`
 
-func (r *Repository) save(ctx context.Context, session entity.Session) error {
+func (r *Repository) Save(ctx context.Context, session entity.Session) error {
 	writeControl := table.TxControl(
 		table.BeginTx(
 			table.WithSerializableReadWrite()))
