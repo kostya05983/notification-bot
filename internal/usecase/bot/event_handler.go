@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	calendarService "notification-bot/internal/domain/calendar/service"
@@ -67,7 +68,20 @@ func (h *Handler) Handle(ctx context.Context, update tgbotapi.Update) (*tgbotapi
 			return nil, errors.Wrap(err, "session.GetToken:")
 		}
 
-		session.AddToken(token.AccessToken)
+		json, err:=json.Marshal(token)
+		if err!=nil {
+			return nil, errors.Wrap(err, "json.Marshal:")
+		}
+
+		session.AddToken(string(json))
+	case entity.StateChooseCalendar:
+		var oauth oauth2.Token
+
+		err:=json.Unmarshal(, )
+		if err!=nil {
+			return nil, errors.Wrap(err, "json.Unmarshal:")
+		}
+
 
 		httpClient := h.config.Client(ctx, token)
 
@@ -77,9 +91,11 @@ func (h *Handler) Handle(ctx context.Context, update tgbotapi.Update) (*tgbotapi
 		}
 	}
 
-	_, err = h.session.Save(ctx, *session)
+	err = h.session.Save(ctx, *session)
 	if err != nil {
 		return nil, errors.Wrap(err, "session.Save")
 	}
+
+
 
 }
