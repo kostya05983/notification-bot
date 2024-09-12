@@ -1,29 +1,12 @@
-package calendar
+package service
 
 import (
-	"context"
 	"notification-bot/internal/domain/calendar/entity"
 	"time"
 
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 )
-
-func GetAuthLink(config *oauth2.Config) string {
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	return authURL
-}
-
-func GetToken(config *oauth2.Config, authCode string) (*oauth2.Token, error) {
-	token, err := config.Exchange(context.TODO(), authCode)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
-}
 
 type CalendarService struct {
 	api calendar.Service
@@ -33,17 +16,23 @@ func New(calendar calendar.Service) CalendarService {
 	return CalendarService{calendar}
 }
 
-func (c *CalendarService) getEvents() (*entity.Events, error) {
+func (c *CalendarService) GetEvents(lastTime *time.Time) (*entity.Events, error) {
 	t := time.Now().Format(time.RFC3339)
 
-	events, err := c.api.Events.List("primary").ShowDeleted(false).
-		SingleEvents(true).TimeMin(t).MaxResults(10).OrderBy("startTime").Do()
+	request := c.api.Events.List("primary").ShowDeleted(false).
+		SingleEvents(true).TimeMin(t).MaxResults(10).OrderBy("startTime")
+
+	if lastTime != nil {
+		request = request.TimeMax(lastTime.Format("2011-06-03T10:00:00-07:00"))
+	}
+
+	events, err := request.Do()
 
 	if err != nil {
 		return nil, errors.Wrap(err, "c.api.Events")
 	}
 
-	entity, err := toEntity(events)
+	entity, err := toEntityEvents(events)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert to entity")
 	}
@@ -51,7 +40,32 @@ func (c *CalendarService) getEvents() (*entity.Events, error) {
 	return entity, nil
 }
 
-func toEntity(src *calendar.Events) (*entity.Events, error) {
+func (c *CalendarService) GetCalendars() (*entity.Calendars, error) {
+	list, err := c.api.CalendarList.List().Do()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "c.api.CalendarList")
+	}
+
+	return toEntityCalendars(list), nil
+}
+
+func toEntityCalendars(src *calendar.CalendarList) *entity.Calendars {
+	calendars := make([]entity.Calendar, 0, len(src.Items))
+
+	for _, item := range src.Items {
+		calendars = append(calendars, entity.Calendar{
+			Description: item.Description,
+			Id:          item.Id,
+		})
+	}
+
+	return &entity.Calendars{
+		Items: calendars,
+	}
+}
+
+func toEntityEvents(src *calendar.Events) (*entity.Events, error) {
 	result := make([]entity.Event, 0, len(src.Items))
 
 	for _, item := range src.Items {

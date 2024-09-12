@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"notification-bot/internal/di"
-	calendar "notification-bot/internal/domain/calendar/service"
 	session "notification-bot/internal/domain/session"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -35,7 +34,7 @@ func Handler(rw http.ResponseWriter, req *http.Request) {
 
 	bot.Debug = true
 
-	container.Invoke(func(calendar calendar.CalendarService, sessions session.Repository) {
+	container.Invoke(func(sessions session.Repository) {
 		updates := bot.ListenForWebhookRespReqFormat(rw, req)
 
 		for update := range updates {
@@ -53,5 +52,4 @@ func Handler(rw http.ResponseWriter, req *http.Request) {
 			}
 		}
 	})
-
 }
