@@ -29,3 +29,13 @@ func (s *Session) AddToken(token string) error {
 func (s *Session) IsAuthenticated() bool {
 	return s.GoogleToken != nil
 }
+
+func (s *Session) WaitToken() error {
+	if s.State != StateCreated {
+		return fmt.Errorf("State is wrong to update token %d", s.State)
+	}
+
+	s.State = StateWaitToken
+
+	return nil
+}
