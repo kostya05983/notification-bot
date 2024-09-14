@@ -68,27 +68,41 @@ func (h *Handler) Handle(ctx context.Context, update tgbotapi.Update) (*tgbotapi
 			return nil, errors.Wrap(err, "session.GetToken:")
 		}
 
-		json, err:=json.Marshal(token)
-		if err!=nil {
+		json, err := json.Marshal(token)
+		if err != nil {
 			return nil, errors.Wrap(err, "json.Marshal:")
 		}
 
 		session.AddToken(string(json))
 	case entity.StateChooseCalendar:
-		var oauth oauth2.Token
-
-		err:=json.Unmarshal(, )
-		if err!=nil {
-			return nil, errors.Wrap(err, "json.Unmarshal:")
-		}
-
-
-		httpClient := h.config.Client(ctx, token)
-
-		srv, err := calendar.NewService(ctx, option.WithHTTPClient(httpClient))
+		service, err := h.initService(ctx, *session)
 		if err != nil {
-			return nil, errors.Wrap(err, "calendar.NewService:")
+			return nil, errors.Wrap(err, "h.initService")
 		}
+
+		calendars, err := service.GetCalendars()
+		if err != nil {
+			return nil, errors.Wrap(err, "service.GetCalendars:")
+		}
+
+		row := tgbotapi.NewInlineKeyboardRow()
+
+		for _, item := range calendars.Items {
+			button := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("Название календаря:%s", item.Description), item.Id)
+			row = append(row, button)
+		}
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите календарь:")
+
+		msg.ReplyMarkup = row
+
+		return &msg, nil
+	case entity.StateWaitCalendar:
+		calendarId := update.CallbackData()
+		if calendarId == "" { //user don't push button
+			return nil, nil
+		}
+
 	}
 
 	err = h.session.Save(ctx, *session)
@@ -96,6 +110,25 @@ func (h *Handler) Handle(ctx context.Context, update tgbotapi.Update) (*tgbotapi
 		return nil, errors.Wrap(err, "session.Save")
 	}
 
+	return nil, nil
+}
 
+func (h *Handler) initService(ctx context.Context, session entity.Session) (*calendarService.CalendarService, error) {
+	var oauth *oauth2.Token
 
+	err := json.Unmarshal([]byte(*session.GoogleToken), oauth)
+	if err != nil {
+		return nil, errors.Wrap(err, "json.Unmarshal:")
+	}
+
+	httpClient := h.config.Client(ctx, oauth)
+
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return nil, errors.Wrap(err, "calendar.NewService:")
+	}
+
+	entityService := calendarService.New(*srv)
+
+	return &entityService, nil
 }
